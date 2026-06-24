@@ -11,16 +11,16 @@ Zero coding required. Pure config and prompt engineering via `SOUL.md`.
 | **OpenClaw Gateway**           | Agent runtime and scheduler        |
 | **Telegram** (grammY adapter)  | Message delivery channel           |
 | **Cron scheduler**             | Triggers briefing at 7:30 AM daily |
-| **Web search tool**            | Fetches live weather and AI news   |
-| **Groq (Llama 3.3 70B)**       | LLM for formatting the briefing    |
+| **DuckDuckGo search**          | Fetches live weather and AI news   |
+| **Ollama (Llama 3.2)**         | Local LLM for formatting briefing  |
 
 ## How It Works
 
 ```text
 1. Cron fires at 7:30 AM IST daily
 2. Gateway triggers the briefing agent in an isolated session
-3. Agent calls web search for Nagpur weather + AI news
-4. LLM formats everything into a clean Telegram message
+3. Agent calls DuckDuckGo search for Nagpur weather + AI news
+4. Ollama (local LLM) formats everything into a clean message
 5. Gateway delivers the message to your Telegram
 ```
 
@@ -45,8 +45,9 @@ claw-morning-brief/
 
 - **Node.js 24+** (or 22.19+)
 - **OpenClaw** installed globally
+- **Ollama** with a model pulled
 - **Telegram bot** created via BotFather
-- **Google AI API key** (Gemini Pro)
+- **Cloudflare WARP** (if Telegram is blocked on your network)
 - **uv** (optional) — Python project tooling
 
 ### 1. Install Node.js
@@ -86,7 +87,37 @@ openclaw --version
 openclaw doctor
 ```
 
-### 3. Create a Telegram Bot
+### 3. Install Ollama
+
+**macOS:**
+
+```bash
+brew install ollama
+```
+
+**Linux:**
+
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+```
+
+**Windows:**
+
+Download from [ollama.com/download](https://ollama.com/download).
+
+Then pull a model:
+
+```bash
+ollama pull llama3.2
+```
+
+Verify Ollama is running:
+
+```bash
+ollama list
+```
+
+### 4. Create a Telegram Bot
 
 1. Open Telegram and search for [@BotFather](https://t.me/BotFather)
 2. Send `/newbot`
@@ -96,16 +127,17 @@ openclaw doctor
 
 Save both values; you'll need them during setup.
 
-### 4. Get a Groq API Key
+### 5. Install Cloudflare WARP (if needed)
 
-1. Go to [console.groq.com](https://console.groq.com)
-2. Sign up (free, no credit card required)
-3. Go to **API Keys** → **Create API Key**
-4. Copy the key (format: `gsk_...`)
+Only required if Telegram API is blocked on your network (common with some ISPs in India).
 
-Groq's free tier includes 1000+ requests/day with ultra-fast inference on Llama 3.3 70B.
+```bash
+brew install --cask cloudflare-warp
+```
 
-### 5. Install uv (Optional)
+Open Cloudflare WARP from Launchpad, accept the privacy policy, and toggle the connection ON.
+
+### 6. Install uv (Optional)
 
 Only needed if you plan to add Python utility scripts to the project.
 
@@ -119,12 +151,6 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 ```powershell
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
-
-Verify:
-
-```bash
-uv --version
 ```
 
 ## Installation
@@ -141,24 +167,7 @@ cd claw-morning-brief
 
 ### Manual Setup
 
-#### 1. Install OpenClaw
-
-```bash
-npm install -g openclaw@latest
-
-# Verify installation
-openclaw --version
-openclaw doctor
-```
-
-#### 2. Create your Telegram bot
-
-1. Open Telegram and message [@BotFather](https://t.me/BotFather)
-2. Send `/newbot` and follow the prompts
-3. Copy the bot token (format: `123456789:ABCdefGHI...`)
-4. Find your Telegram user ID — message [@userinfobot](https://t.me/userinfobot) and note the `Id` field
-
-#### 3. Configure environment variables
+#### 1. Configure environment variables
 
 ```bash
 cp .env.example .env
@@ -167,12 +176,12 @@ cp .env.example .env
 Edit `.env` with your values:
 
 ```env
-GROQ_API_KEY=gsk_your-key-here
+OLLAMA_BASE_URL=http://localhost:11434
 TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz
 TELEGRAM_CHAT_ID=your-numeric-user-id
 ```
 
-#### 4. Deploy workspace files
+#### 2. Deploy workspace files
 
 ```bash
 # Copy workspace to OpenClaw's config directory
@@ -185,14 +194,20 @@ cp workspace/TOOLS.md ~/.openclaw/workspace/
 cp openclaw.json ~/.openclaw/openclaw.json
 ```
 
-#### 5. Start the gateway
+#### 3. Enable DuckDuckGo search plugin
+
+```bash
+openclaw plugins enable duckduckgo
+```
+
+#### 4. Start the gateway
 
 ```bash
 source .env
 openclaw gateway
 ```
 
-#### 6. Approve Telegram pairing
+#### 5. Approve Telegram pairing
 
 In another terminal:
 
@@ -202,7 +217,7 @@ openclaw pairing list telegram
 openclaw pairing approve telegram <CODE>
 ```
 
-#### 7. Add the morning cron job
+#### 6. Add the morning cron job
 
 ```bash
 openclaw cron create "30 7 * * *" \
@@ -211,10 +226,11 @@ openclaw cron create "30 7 * * *" \
   --tz "Asia/Kolkata" \
   --session isolated \
   --announce \
-  --channel telegram
+  --channel telegram \
+  --to YOUR_TELEGRAM_CHAT_ID
 ```
 
-#### 8. Verify
+#### 7. Verify
 
 ```bash
 # Test the cron job immediately
@@ -224,27 +240,9 @@ openclaw cron run morning-brief --wait
 openclaw cron list
 ```
 
-## Using uv (Optional)
+## Running as a Daemon
 
-If you want to manage the project metadata or add Python utility scripts:
-
-```bash
-# Install uv
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Initialize virtual environment
-uv venv
-source .venv/bin/activate
-
-# Sync dependencies (none required for base setup)
-uv sync
-```
-
-## Deployment
-
-### Option A: Daemon Mode (Recommended)
-
-Install OpenClaw as a persistent background service:
+Install OpenClaw as a persistent background service so it survives reboots:
 
 ```bash
 openclaw onboard --install-daemon
@@ -255,46 +253,10 @@ openclaw gateway status
 
 This installs a `launchd` (macOS) or `systemd` (Linux) user service that auto-starts on boot.
 
-### Option B: Docker
+**Note:** Your Mac needs to be awake when the cron fires. To schedule an automatic wake:
 
 ```bash
-# Pull and run with your config mounted
-docker run -d \
-  --name morning-brief \
-  --restart unless-stopped \
-  -v ~/.openclaw:/root/.openclaw \
-  -e GROQ_API_KEY \
-  -e TELEGRAM_BOT_TOKEN \
-  -e TELEGRAM_CHAT_ID \
-  openclaw/openclaw:latest gateway
-```
-
-### Option C: VPS / Cloud VM
-
-```bash
-# On your server
-npm install -g openclaw@latest
-openclaw onboard --install-daemon
-
-# Copy your config
-scp -r ~/.openclaw/openclaw.json user@server:~/.openclaw/
-scp -r workspace/ user@server:~/.openclaw/workspace/
-
-# Set env vars in the service file or use .env
-openclaw gateway status
-```
-
-### Keeping It Running
-
-```bash
-# Check gateway health
-openclaw doctor
-
-# View logs
-openclaw logs --follow
-
-# Restart after config changes
-openclaw gateway restart
+sudo pmset repeat wakeorpoweron MTWRFSU 07:25:00
 ```
 
 ## Customization
@@ -302,7 +264,6 @@ openclaw gateway restart
 ### Change briefing time
 
 ```bash
-# Remove old job and create new one
 openclaw cron remove morning-brief
 openclaw cron create "0 8 * * *" \
   "Generate the morning briefing per SOUL.md instructions." \
@@ -310,32 +271,36 @@ openclaw cron create "0 8 * * *" \
   --tz "Asia/Kolkata" \
   --session isolated \
   --announce \
-  --channel telegram
+  --channel telegram \
+  --to YOUR_TELEGRAM_CHAT_ID
 ```
 
 ### Change city
 
 Edit `workspace/SOUL.md` and replace "Nagpur" with your city. Re-copy to `~/.openclaw/workspace/`.
 
-### Use Gemini instead of Groq
+### Use a different Ollama model
+
+```bash
+ollama pull llama3.1:8b
+```
 
 Update `openclaw.json`:
+
+```json
+"model": { "primary": "ollama/llama3.1:8b" }
+```
+
+### Use a cloud LLM instead
+
+Update `openclaw.json` with one of:
 
 ```json
 "model": { "primary": "google/gemini-2.5-flash" }
+"model": { "primary": "openrouter/meta-llama/llama-3.3-70b-instruct:free" }
 ```
 
-Set `GOOGLE_API_KEY=AIza...` in your `.env`.
-
-### Use Ollama (local, offline)
-
-Update `openclaw.json`:
-
-```json
-"model": { "primary": "ollama/llama3.3" }
-```
-
-Set `OLLAMA_BASE_URL=http://localhost:11434` in your `.env`.
+Set the corresponding API key (`GOOGLE_API_KEY` or `OPENROUTER_API_KEY`) in your `.env`.
 
 ### Add Google Calendar
 
@@ -343,13 +308,14 @@ Enable the Google Calendar tool in OpenClaw and the agent will automatically inc
 
 ## Troubleshooting
 
-| Problem              | Fix                                                          |
-| -------------------- | ------------------------------------------------------------ |
-| Bot doesn't respond  | `openclaw pairing list telegram` — approve pending pairings  |
-| Cron doesn't fire    | `openclaw cron list` — check job status and timezone         |
-| Weather data missing | Web search tool may be rate-limited — check `openclaw logs`  |
-| 401 on Telegram      | Verify `TELEGRAM_BOT_TOKEN` is correct                       |
-| Gateway won't start  | Run `openclaw doctor --fix`                                  |
+| Problem              | Fix                                                                        |
+| -------------------- | -------------------------------------------------------------------------- |
+| Bot doesn't respond  | `openclaw pairing list telegram` — approve pending pairings                |
+| Cron doesn't fire    | `openclaw cron list` — check job status and timezone                       |
+| Weather data missing | Ensure DuckDuckGo plugin is enabled: `openclaw plugins enable duckduckgo`  |
+| Telegram times out   | Install Cloudflare WARP: `brew install --cask cloudflare-warp`             |
+| Ollama not found     | Ensure Ollama is running: `ollama serve`                                   |
+| Gateway won't start  | Run `openclaw doctor --fix`                                                |
 
 ## License
 

@@ -4,7 +4,7 @@
 
   "agents": {
     "defaults": {
-      "model": { "primary": "groq/llama-3.3-70b-versatile" },
+      "model": { "primary": "ollama/llama3.2:latest" },
       "workspace": "./workspace",
       "thinkingDefault": "off",
       "timeoutSeconds": 300,
@@ -14,10 +14,7 @@
     "list": [
       {
         "id": "morning-brief",
-        "default": true,
-        "groupChat": {
-          "mentionPatterns": ["@morningbrief", "brief"]
-        }
+        "default": true
       }
     ]
   },
@@ -26,19 +23,14 @@
     "telegram": {
       "enabled": true,
       "dmPolicy": "allowlist",
-      "allowFrom": ["YOUR_CHAT_ID"],
+      "allowFrom": ["${TELEGRAM_CHAT_ID}"],
       "streaming": { "mode": "off" }
     }
   },
 
   "cron": {
     "enabled": true,
-    "maxConcurrentRuns": 2,
-    "retry": {
-      "maxAttempts": 2,
-      "backoffMs": [60000, 120000],
-      "retryOn": ["rate_limit", "overloaded", "network"]
-    }
+    "maxConcurrentRuns": 2
   },
 
   "session": {
@@ -48,6 +40,14 @@
       "mode": "daily",
       "atHour": 4,
       "idleMinutes": 1440
+    }
+  },
+
+  "plugins": {
+    "entries": {
+      "duckduckgo": {
+        "enabled": true
+      }
     }
   }
 }
