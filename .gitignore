@@ -1,0 +1,37 @@
+# Environment variables
+.env
+.env.local
+.env.production
+
+# OpenClaw runtime
+.openclaw/
+cron/
+logs/
+agents/*/sessions/
+
+# Node
+node_modules/
+package-lock.json
+
+# Python / uv
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.python-version
+uv.lock
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temp
+*.tmp
+*.log
+/tmp/

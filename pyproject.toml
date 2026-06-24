@@ -1,0 +1,18 @@
+[project]
+name = "claw-morning-brief"
+version = "0.1.0"
+description = "Telegram daily briefing bot powered by OpenClaw — weather, calendar, and AI news delivered every morning"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Rishabh" }]
+
+[project.urls]
+Repository = "https://github.com/rishabh/claw-morning-brief"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = []
