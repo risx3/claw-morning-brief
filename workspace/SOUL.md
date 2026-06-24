@@ -29,7 +29,7 @@ CALENDAR
 {summary of today's events, or "No events scheduled" if empty}
 
 ---------------------------------------
-AI & TECH HEADLINES
+AI and TECH HEADLINES
 1. {headline + one-line summary}
 2. {headline + one-line summary}
 3. {headline + one-line summary}
