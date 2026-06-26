@@ -149,19 +149,19 @@ ssh -i ~/.ssh/claw-morning-brief.pem ubuntu@<INSTANCE_IP>
 export OPENCLAW_TOKEN=briefbot2026
 
 # 7:30 AM IST — Morning briefing
-openclaw cron create "30 2 * * *" \
+openclaw cron create "30 7 * * *" \
   "Generate the morning briefing per SOUL.md instructions." \
   --name morning-brief --tz Asia/Kolkata \
   --session isolated --announce --channel telegram --to YOUR_CHAT_ID
 
 # 12:00 PM IST — Midday update
-openclaw cron create "30 6 * * *" \
+openclaw cron create "0 12 * * *" \
   "Generate the midday briefing per SOUL.md instructions. Use the afternoon greeting." \
   --name noon-brief --tz Asia/Kolkata \
   --session isolated --announce --channel telegram --to YOUR_CHAT_ID
 
 # 6:00 PM IST — Evening wrap-up
-openclaw cron create "30 12 * * *" \
+openclaw cron create "0 18 * * *" \
   "Generate the evening briefing per SOUL.md instructions. Use the evening greeting." \
   --name evening-brief --tz Asia/Kolkata \
   --session isolated --announce --channel telegram --to YOUR_CHAT_ID
@@ -182,7 +182,7 @@ openclaw cron run morning-brief --wait
 
 ```bash
 openclaw cron remove morning-brief
-openclaw cron create "0 3 * * *" \
+openclaw cron create "0 8 * * *" \
   "Generate the morning briefing per SOUL.md instructions." \
   --name morning-brief --tz Asia/Kolkata \
   --session isolated --announce --channel telegram --to YOUR_CHAT_ID
