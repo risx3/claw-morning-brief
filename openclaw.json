@@ -4,8 +4,8 @@
 
   "agents": {
     "defaults": {
-      "model": { "primary": "ollama/llama3.2:latest" },
-      "workspace": "./workspace",
+      "model": { "primary": "openai/gpt-5.4-mini" },
+      "workspace": "/home/openclaw/.openclaw/workspace",
       "thinkingDefault": "off",
       "timeoutSeconds": 300,
       "heartbeat": { "every": "0m" },
@@ -23,7 +23,7 @@
     "telegram": {
       "enabled": true,
       "dmPolicy": "allowlist",
-      "allowFrom": ["${TELEGRAM_CHAT_ID}"],
+      "allowFrom": ["YOUR_CHAT_ID"],
       "streaming": { "mode": "off" }
     }
   },
